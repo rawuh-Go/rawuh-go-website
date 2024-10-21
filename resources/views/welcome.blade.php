@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+    @filamentPWA
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rawuh-Go</title>
@@ -136,7 +137,7 @@
     <div class="container">
         <div class="logo">
             <!-- Tempatkan logo di sini -->
-            <img src="{{ asset('images/logo.png') }}" alt="Logo">
+            <img src="{{ asset('images/favicon.png') }}" alt="Logo">
         </div>
         <h3>Selamat Datang di Rawuh Go</h3> <!-- Teks berada dalam satu baris -->
         <a href="/admin/login" class="btn">Masuk ke Admin</a>
