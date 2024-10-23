@@ -42,7 +42,10 @@ class UserResource extends Resource
                                     ->searchable(),
                                 Forms\Components\FileUpload::make('image')
                                     ->label('Photo Profile')
-                                    ->acceptedFileTypes(['image/*']),
+                                    ->acceptedFileTypes(['image/*'])
+                                    ->disk('public')
+                                    ->directory('photo-profile')
+                                    ->preserveFilenames()
                             ])
                     ]),
                 Forms\Components\Group::make()
