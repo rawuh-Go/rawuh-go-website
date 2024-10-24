@@ -103,9 +103,17 @@
                                 class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50 shadow-md">
                                 Ambil Ulang
                             </button>
+                            @if ($showLogbookForm)
+                                <div class="mt-4">
+                                    <h3 class="text-lg font-semibold mb-2">Logbook Harian</h3>
+                                    <textarea wire:model="logbook" class="w-full h-32 p-2 border rounded"
+                                        placeholder="Tulis deskripsi pekerjaan Anda hari ini..."></textarea>
+                                    @error('logbook') <span class="text-red-500">{{ $message }}</span> @enderror
+                                </div>
+                            @endif
                             <button x-show="photoTaken" @click="submitPresensi"
                                 class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 shadow-md">
-                                Submit Presensi
+                                {{ $showLogbookForm ? 'Submit Presensi dan Logbook' : 'Submit Presensi' }}
                             </button>
                         </div>
                         <button wire:click="backToMap"
@@ -190,7 +198,6 @@
         }
     }
 
-    // camera handling for presensi
     function cameraHandler() {
         return {
             stream: null,

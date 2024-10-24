@@ -99,6 +99,16 @@ class AttendanceResource extends Resource
                 Tables\Columns\ImageColumn::make('foto_absen_pulang')
                     ->label('Foto Absen Pulang')
                     ->circular(),
+                Tables\Columns\TextColumn::make('logbook')
+                    ->label('Logbook Harian')
+                    ->limit(50)
+                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
+                        $state = $column->getState();
+                        if (strlen($state) <= 50) {
+                            return null;
+                        }
+                        return $state;
+                    }),
                 Tables\Columns\TextColumn::make('updated_at')
                     ->dateTime()
                     ->sortable()

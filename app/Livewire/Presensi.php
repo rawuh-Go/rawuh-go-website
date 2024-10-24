@@ -21,12 +21,17 @@ class Presensi extends Component
     public $showPhotoUploadPage = false;
     public $photo;
     public $photoPreview;
+    public $logbook = '';
+    public $showLogbookForm = false;
+
 
     protected $rules = [
         'photo' => 'required',
         'latitude' => 'required',
         'longitude' => 'required',
+        'logbook' => 'required_if:showLogbookForm,true',
     ];
+
 
     public function render()
     {
@@ -60,19 +65,6 @@ class Presensi extends Component
 
         $schedule = Schedule::where('user_id', Auth::user()->id)->first();
 
-        // Check for approved leave
-        $today = Carbon::today()->format('Y-m-d');
-        $approveLeave = Leave::where('user_id', Auth::user()->id)
-            ->where('status', 'approve')
-            ->whereDate('tanggal_mulai', '<=', $today)
-            ->whereDate('tanggal_selesai', '>=', $today)
-            ->exists();
-
-        if ($approveLeave) {
-            session()->flash('error', 'Anda sedang cuti');
-            return;
-        }
-
         if ($schedule) {
             $attendance = Attendance::where('user_id', Auth::user()->id)
                 ->whereDate('created_at', date('Y-m-d'))->first();
@@ -81,13 +73,10 @@ class Presensi extends Component
             $fileName = time() . '.png';
             $folderPath = 'attendance/' . $user->name;
 
-            // Ensure the directory exists
             Storage::disk('public')->makeDirectory($folderPath);
 
-            // Decode the base64 image
             $image = $this->decodeBase64Image($this->photo);
 
-            // Save the image
             $photoPath = $folderPath . '/' . $fileName;
             Storage::disk('public')->put($photoPath, $image);
 
@@ -103,7 +92,6 @@ class Presensi extends Component
                     'datang_longitude' => $this->longitude,
                     'waktu_datang' => Carbon::now()->toTimeString(),
                     'foto_absen_datang' => $photoPath,
-                    'foto_absen_pulang' => null,
                 ]);
                 session()->flash('message', 'Presensi masuk berhasil.');
             } else {
@@ -112,19 +100,27 @@ class Presensi extends Component
                     session()->flash('error', 'Anda sudah melakukan presensi pulang hari ini.');
                     return;
                 }
+
+                if (empty($this->logbook)) {
+                    $this->showLogbookForm = true;
+                    return;
+                }
+
                 $attendance->update([
                     'pulang_latitude' => $this->latitude,
                     'pulang_longitude' => $this->longitude,
                     'waktu_pulang' => Carbon::now()->toTimeString(),
                     'foto_absen_pulang' => $photoPath,
+                    'logbook' => $this->logbook,
                 ]);
                 session()->flash('message', 'Presensi pulang berhasil.');
             }
 
-            $this->reset(['photo', 'photoPreview', 'showPhotoUploadPage']);
+            $this->reset(['photo', 'photoPreview', 'showPhotoUploadPage', 'logbook', 'showLogbookForm']);
             return redirect('admin/attendances');
         }
     }
+
 
     public function initiateAttendance()
     {
