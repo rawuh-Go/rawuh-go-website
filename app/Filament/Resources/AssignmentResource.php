@@ -62,11 +62,35 @@ class AssignmentResource extends Resource
                             ->default(fn() => auth()->id()),
                     ]),
 
+                // Section untuk feedback jika ada dan status rejected
+                Forms\Components\Section::make('Feedback Perbaikan')
+                    ->schema([
+                        Forms\Components\View::make('forms.components.feedback-display'),
+                    ])
+                    ->visible(
+                        fn($record) =>
+                        $record &&
+                        !$isAdmin &&
+                        $record->status === Assignment::STATUS_REJECTED &&
+                        $record->feedback
+                    )
+                    ->collapsed(false),
+
                 // Section untuk laporan karyawan
                 Forms\Components\Section::make('Laporan Karyawan')
                     ->schema([
                         Forms\Components\ViewField::make('reports')
                             ->view('filament.forms.components.assignment-reports'),
+                    ])
+                    ->visible(fn($record) => $record && $isAdmin)
+                    ->collapsible(),
+
+                // Section untuk feedback (hanya untuk admin)
+                Forms\Components\Section::make('Feedback')
+                    ->schema([
+                        Forms\Components\Textarea::make('feedback')
+                            ->label('Feedback untuk karyawan')
+                            ->visible(fn($record) => $record && $isAdmin),
                     ])
                     ->visible(fn($record) => $record && $isAdmin)
                     ->collapsible(),
@@ -107,15 +131,18 @@ class AssignmentResource extends Resource
             ->actions([
                 Tables\Actions\ViewAction::make(),
 
-                // Action submit laporan untuk karyawan
+                // Action submit/revisi laporan untuk karyawan
                 Tables\Actions\Action::make('submit_report')
+                    ->label(
+                        fn(Assignment $record) =>
+                        $record->status === Assignment::STATUS_REJECTED ? 'Submit Revisi' : 'Submit Laporan'
+                    )
                     ->form([
                         Forms\Components\Textarea::make('laporan')
                             ->required()
                             ->label('Laporan Pengerjaan'),
                         Forms\Components\FileUpload::make('file_laporan')
                             ->directory(function (Assignment $record) {
-                                // Membuat slug dari judul untuk nama folder
                                 $folderName = Str::slug($record->judul);
                                 return "assignment/{$folderName}";
                             })
@@ -134,14 +161,22 @@ class AssignmentResource extends Resource
                             [
                                 'laporan' => $data['laporan'],
                                 'file_laporan' => $data['file_laporan'] ?? null,
+                                'submitted_at' => now(),
                             ]
                         );
-                        $record->update(['status' => Assignment::STATUS_IN_PROGRESS]);
+                        $record->update([
+                            'status' => Assignment::STATUS_IN_PROGRESS,
+                            'feedback' => null
+                        ]);
                     })
                     ->visible(
                         fn(Assignment $record) =>
                         !auth()->user()->hasRole(['super_admin', 'hrd']) &&
-                        in_array($record->status, [Assignment::STATUS_PENDING, Assignment::STATUS_IN_PROGRESS])
+                        in_array($record->status, [
+                            Assignment::STATUS_PENDING,
+                            Assignment::STATUS_IN_PROGRESS,
+                            Assignment::STATUS_REJECTED
+                        ])
                     ),
 
                 // Action approve untuk admin/hrd
@@ -166,10 +201,12 @@ class AssignmentResource extends Resource
 
                 // Action reject untuk admin/hrd
                 Tables\Actions\Action::make('reject')
+                    ->color('danger')
                     ->form([
                         Forms\Components\Textarea::make('feedback')
                             ->required()
-                            ->label('Alasan Penolakan'),
+                            ->label('Feedback Perbaikan')
+                            ->helperText('Jelaskan apa yang perlu diperbaiki dari tugas ini'),
                     ])
                     ->action(
                         fn(Assignment $record, array $data) =>

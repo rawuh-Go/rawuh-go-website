@@ -13,6 +13,11 @@
                         <div class="mt-1 text-black dark:text-white">
                             {{ $user->pivot->laporan }}
                         </div>
+                        @if($user->pivot->submitted_at)
+                            <div class="mt-2 text-sm text-gray-500">
+                                Disubmit pada: {{ $user->pivot->submitted_at->format('d M Y H:i') }}
+                            </div>
+                        @endif
                     </div>
                 @endif
 
