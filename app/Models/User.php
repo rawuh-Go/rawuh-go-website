@@ -59,4 +59,15 @@ class User extends Authenticatable
     {
         return $this->hasMany(Leave::class);
     }
+
+    public function assignments()
+    {
+        return $this->belongsToMany(Assignment::class)->withPivot('laporan', 'file_laporan')->withTimestamps();
+    }
+
+    public function createdAssignments()
+    {
+        return $this->hasMany(Assignment::class, 'created_by');
+    }
+
 }
