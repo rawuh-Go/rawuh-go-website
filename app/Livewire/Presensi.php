@@ -21,15 +21,19 @@ class Presensi extends Component
     public $showPhotoUploadPage = false;
     public $photo;
     public $photoPreview;
+    public $photoTaken = false;
+
     public $logbook = '';
     public $showLogbookForm = false;
+    public $isClockOut = false;
+
 
 
     protected $rules = [
         'photo' => 'required',
         'latitude' => 'required',
         'longitude' => 'required',
-        'logbook' => 'required_if:showLogbookForm,true',
+        'logbook' => 'required_if:isClockOut,true',
     ];
 
 
@@ -39,12 +43,18 @@ class Presensi extends Component
         $attendance = Attendance::where('user_id', Auth::user()->id)
             ->whereDate('created_at', date('Y-m-d'))->first();
 
+        // Set isClockOut based on attendance status
+        if ($attendance && !$attendance->waktu_pulang) {
+            $this->isClockOut = true;
+        }
+
         return view('livewire.presensi', [
             'schedule' => $schedule,
             'insideRadius' => $this->insideRadius,
             'attendance' => $attendance,
             'showPhotoUploadPage' => $this->showPhotoUploadPage,
             'photoPreview' => $this->photoPreview,
+            'isClockOut' => $this->isClockOut,
         ]);
     }
 
@@ -52,6 +62,12 @@ class Presensi extends Component
     {
         $this->photo = $photoData;
         $this->photoPreview = $photoData;
+        $this->photoTaken = true;
+
+        // Automatically show logbook form after taking photo during clock out
+        if ($this->isClockOut) {
+            $this->showLogbookForm = true;
+        }
     }
 
     public function showPhotoUpload()
@@ -61,7 +77,19 @@ class Presensi extends Component
 
     public function submitPresensi()
     {
-        $this->validate();
+        // Validate basic requirements
+        $this->validate([
+            'photo' => 'required',
+            'latitude' => 'required',
+            'longitude' => 'required',
+        ]);
+
+        // Additional validation for clock out
+        if ($this->isClockOut && empty($this->logbook)) {
+            $this->showLogbookForm = true;
+            session()->flash('error', 'Mohon isi logbook terlebih dahulu.');
+            return;
+        }
 
         $schedule = Schedule::where('user_id', Auth::user()->id)->first();
 
@@ -76,7 +104,6 @@ class Presensi extends Component
             Storage::disk('public')->makeDirectory($folderPath);
 
             $image = $this->decodeBase64Image($this->photo);
-
             $photoPath = $folderPath . '/' . $fileName;
             Storage::disk('public')->put($photoPath, $image);
 
@@ -101,11 +128,6 @@ class Presensi extends Component
                     return;
                 }
 
-                if (empty($this->logbook)) {
-                    $this->showLogbookForm = true;
-                    return;
-                }
-
                 $attendance->update([
                     'pulang_latitude' => $this->latitude,
                     'pulang_longitude' => $this->longitude,
@@ -116,7 +138,7 @@ class Presensi extends Component
                 session()->flash('message', 'Presensi pulang berhasil.');
             }
 
-            $this->reset(['photo', 'photoPreview', 'showPhotoUploadPage', 'logbook', 'showLogbookForm']);
+            $this->reset(['photo', 'photoPreview', 'showPhotoUploadPage', 'logbook', 'showLogbookForm', 'isClockOut', 'photoTaken']);
             return redirect('admin/attendances');
         }
     }

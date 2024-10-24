@@ -89,171 +89,198 @@
                     <div x-data="cameraHandler()" x-init="initializeCamera">
                         <h2 class="text-2xl font-semibold text-gray-800 mb-4">Ambil Foto Presensi</h2>
                         <div class="mb-4 relative">
-                            <video x-show="!photoTaken" x-ref="video" width="100%" height="auto" autoplay playsinline
+                            <video x-show="!$wire.photoTaken" x-ref="video" width="100%" height="auto" autoplay playsinline
                                 class="rounded-lg shadow-md"></video>
-                            <img x-show="photoTaken" :src="photoPreview" alt="Preview"
+                            <img x-show="$wire.photoTaken" :src="$wire . photoPreview" alt="Preview"
                                 class="w-full h-auto rounded-lg shadow-md">
                         </div>
-                        <div class="flex justify-between mb-4">
-                            <button x-show="!photoTaken" @click="capturePhoto"
-                                class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 shadow-md">
-                                Ambil Foto
-                            </button>
-                            <button x-show="photoTaken" @click="retakePhoto"
-                                class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50 shadow-md">
-                                Ambil Ulang
-                            </button>
-                            @if ($showLogbookForm)
-                                <div class="mt-4">
-                                    <h3 class="text-lg font-semibold mb-2">Logbook Harian</h3>
-                                    <textarea wire:model="logbook" class="w-full h-32 p-2 border rounded"
-                                        placeholder="Tulis deskripsi pekerjaan Anda hari ini..."></textarea>
-                                    @error('logbook') <span class="text-red-500">{{ $message }}</span> @enderror
+                        <!-- Photo Controls -->
+                        <div class="flex flex-col space-y-4 mb-6">
+                            <div class="flex justify-between">
+                                <button x-show="!$wire.photoTaken" @click="capturePhoto"
+                                    class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 shadow-md">
+                                    Ambil Foto
+                                </button>
+                                <button x-show="$wire.photoTaken" @click="retakePhoto"
+                                    class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50 shadow-md">
+                                    Ambil Ulang
+                                </button>
+                            </div>
+
+                            <!-- Enhanced Logbook Form -->
+                            @if ($isClockOut && $photoTaken)
+                                <div
+                                    class="bg-white rounded-xl shadow-lg p-6 border border-gray-200 transition-all duration-300 ease-in-out transform hover:shadow-xl">
+                                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-500" fill="none"
+                                            viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                        </svg>
+                                        Logbook Harian
+                                    </h3>
+
+                                    <div class="space-y-4">
+                                        <div class="relative">
+                                            <textarea wire:model="logbook"
+                                                class="w-full h-40 p-4 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 ease-in-out resize-none"
+                                                placeholder="Deskripsikan pekerjaan yang telah Anda lakukan hari ini..."></textarea>
+                                            @error('logbook')
+                                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
+                                            @enderror
+                                        </div>
+
+                                        <div class="flex justify-end space-x-4">
+                                            <button @click="submitPresensi"
+                                                class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 shadow-md flex items-center">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
+                                                    viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M5 13l4 4L19 7" />
+                                                </svg>
+                                                Submit Presensi
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
+                            @elseif (!$isClockOut && $photoTaken)
+                                <button @click="submitPresensi"
+                                    class="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 shadow-md">
+                                    Submit Presensi
+                                </button>
                             @endif
-                            <button x-show="photoTaken" @click="submitPresensi"
-                                class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 shadow-md">
-                                {{ $showLogbookForm ? 'Submit Presensi dan Logbook' : 'Submit Presensi' }}
+                            <button wire:click="backToMap"
+                                class="w-full px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 shadow-md">
+                                Kembali ke Peta
                             </button>
                         </div>
-                        <button wire:click="backToMap"
-                            class="w-full px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 shadow-md">
-                            Kembali ke Peta
-                        </button>
-                    </div>
                 @endif
+                </div>
             </div>
         </div>
     </div>
-</div>
 
-<script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
-<script>
-    // DOM
-    let map;
-    let lat;
-    let lng;
-    let component;
-    let marker;
-    const office = [{{$schedule->office->latitude}}, {{$schedule->office->longitude}}];
-    const radius = {{$schedule->office->radius}};
+    <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <script>
+        // DOM
+        let map;
+        let lat;
+        let lng;
+        let component;
+        let marker;
+        const office = [{{$schedule->office->latitude}}, {{$schedule->office->longitude}}];
+        const radius = {{$schedule->office->radius}};
 
-    document.addEventListener('livewire:initialized', function () {
-        component = @this;
-        // add map layer
-        map = L.map('map').setView([{{$schedule->office->latitude}}, {{$schedule->office->longitude}}], 15);
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
+        document.addEventListener('livewire:initialized', function () {
+            component = @this;
+            // add map layer
+            map = L.map('map').setView([{{$schedule->office->latitude}}, {{$schedule->office->longitude}}], 15);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png').addTo(map);
 
-        // Add office marker
-        L.marker(office).addTo(map)
-            .bindPopup('Office Location')
-            .openPopup();
+            // Add office marker
+            L.marker(office).addTo(map)
+                .bindPopup('Office Location')
+                .openPopup();
 
-        // Add radius circle
-        const circle = L.circle(office, {
-            color: 'blue',
-            fillColor: '#30cdf0',
-            fillOpacity: 0.2,
-            radius: radius,
-        }).addTo(map);
-    })
+            // Add radius circle
+            const circle = L.circle(office, {
+                color: 'blue',
+                fillColor: '#30cdf0',
+                fillOpacity: 0.2,
+                radius: radius,
+            }).addTo(map);
+        })
 
-    // Capture user location
-    function tagLocation() {
-        if (navigator.geolocation) {
-            navigator.geolocation.getCurrentPosition(function (position) {
-                lat = position.coords.latitude;
-                lng = position.coords.longitude;
+        // Capture user location
+        function tagLocation() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(function (position) {
+                    lat = position.coords.latitude;
+                    lng = position.coords.longitude;
 
-                if (marker) {
-                    map.removeLayer(marker);
-                }
+                    if (marker) {
+                        map.removeLayer(marker);
+                    }
 
-                marker = L.marker([lat, lng]).addTo(map)
-                    .bindPopup('Your Location')
-                    .openPopup();
-                map.setView([lat, lng], 15);
+                    marker = L.marker([lat, lng]).addTo(map)
+                        .bindPopup('Your Location')
+                        .openPopup();
+                    map.setView([lat, lng], 15);
 
-                // Check if within radius
-                if (radiusDistance(lat, lng, office, radius)) {
-                    component.set('insideRadius', true);
-                    component.set('latitude', lat);
-                    component.set('longitude', lng);
-                }
-            })
-        } else {
-            alert('Tidak bisa mendapatkan lokasi');
+                    // Check if within radius
+                    if (radiusDistance(lat, lng, office, radius)) {
+                        component.set('insideRadius', true);
+                        component.set('latitude', lat);
+                        component.set('longitude', lng);
+                    }
+                })
+            } else {
+                alert('Tidak bisa mendapatkan lokasi');
+            }
         }
-    }
 
-    // Calculate user radius
-    function radiusDistance(lat, lng, center, radius) {
-        const is_wfa = {{$schedule->is_wfa ? 'true' : 'false'}};
-        if (is_wfa) {
-            alert('Anda sedang WFA. Presensi dapat dilakukan dari mana saja.');
-            return true;
-        } else {
-            let distance = map.distance([lat, lng], center);
-            return distance <= radius;
+        // Calculate user radius
+        function radiusDistance(lat, lng, center, radius) {
+            const is_wfa = {{$schedule->is_wfa ? 'true' : 'false'}};
+            if (is_wfa) {
+                alert('Anda sedang WFA. Presensi dapat dilakukan dari mana saja.');
+                return true;
+            } else {
+                let distance = map.distance([lat, lng], center);
+                return distance <= radius;
+            }
         }
-    }
 
-    function cameraHandler() {
-        return {
-            stream: null,
-            photoTaken: false,
-            photoPreview: null,
-            initializeCamera() {
-                if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                    navigator.mediaDevices.getUserMedia({ video: true })
-                        .then(stream => {
-                            this.stream = stream;
-                            this.$refs.video.srcObject = stream;
-                        })
-                        .catch(error => {
-                            console.error("Unable to access the camera: ", error);
-                            alert("Unable to access the camera. Please make sure you've granted permission.");
-                        });
-                } else {
-                    alert("Sorry, your browser does not support accessing the camera.");
-                }
-            },
-            capturePhoto() {
-                const video = this.$refs.video;
-                const canvas = document.createElement('canvas');
-                canvas.width = video.videoWidth;
-                canvas.height = video.videoHeight;
-                canvas.getContext('2d').drawImage(video, 0, 0);
-                const imageDataUrl = canvas.toDataURL('image/jpeg');
-                this.photoPreview = imageDataUrl;
-                this.photoTaken = true;
-                @this.set('photo', imageDataUrl);
-                @this.set('photoPreview', imageDataUrl);
-            },
-            retakePhoto() {
-                this.photoTaken = false;
-                this.photoPreview = null;
-                @this.set('photo', null);
-                @this.set('photoPreview', null);
-            },
-            submitPresensi() {
-                if (!this.photoTaken) {
-                    alert("Silakan ambil foto terlebih dahulu!");
-                    return;
-                }
-                @this.call('submitPresensi');
-            },
-            stopCamera() {
-                if (this.stream) {
-                    this.stream.getTracks().forEach(track => track.stop());
+        function cameraHandler() {
+            return {
+                stream: null,
+                initializeCamera() {
+                    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                        navigator.mediaDevices.getUserMedia({ video: true })
+                            .then(stream => {
+                                this.stream = stream;
+                                this.$refs.video.srcObject = stream;
+                            })
+                            .catch(error => {
+                                console.error("Unable to access the camera: ", error);
+                                alert("Unable to access the camera. Please make sure you've granted permission.");
+                            });
+                    } else {
+                        alert("Sorry, your browser does not support accessing the camera.");
+                    }
+                },
+                capturePhoto() {
+                    const video = this.$refs.video;
+                    const canvas = document.createElement('canvas');
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    canvas.getContext('2d').drawImage(video, 0, 0);
+                    const imageDataUrl = canvas.toDataURL('image/jpeg');
+                    this.$wire.setPhoto(imageDataUrl);
+                },
+                retakePhoto() {
+                    this.$wire.set('photo', null);
+                    this.$wire.set('photoPreview', null);
+                    this.$wire.set('photoTaken', false);
+                },
+                submitPresensi() {
+                    if (!this.$wire.photoTaken) {
+                        alert("Silakan ambil foto terlebih dahulu!");
+                        return;
+                    }
+                    this.$wire.submitPresensi();
+                },
+                stopCamera() {
+                    if (this.stream) {
+                        this.stream.getTracks().forEach(track => track.stop());
+                    }
                 }
             }
         }
-    }
 
-    document.addEventListener('livewire:navigated', () => {
-        if (typeof cameraHandler !== 'undefined' && cameraHandler().stopCamera) {
-            cameraHandler().stopCamera();
-        }
-    });
-</script>
+        document.addEventListener('livewire:navigated', () => {
+            if (typeof cameraHandler !== 'undefined' && cameraHandler().stopCamera) {
+                cameraHandler().stopCamera();
+            }
+        });
+    </script>
