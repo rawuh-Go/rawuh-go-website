@@ -89,15 +89,25 @@
                     <div x-data="cameraHandler()" x-init="initializeCamera">
                         <h2 class="text-2xl font-semibold text-gray-800 mb-4">Ambil Foto Presensi</h2>
                         <div class="mb-4 relative">
-                            <video x-show="!$wire.photoTaken" x-ref="video" width="100%" height="auto" autoplay playsinline
-                                class="rounded-lg shadow-md"></video>
-                            <img x-show="$wire.photoTaken" :src="$wire . photoPreview" alt="Preview"
-                                class="w-full h-auto rounded-lg shadow-md">
+                        <!-- Video feed container -->
+                        <div class="relative">
+                                        <video x-show="!$wire.photoTaken" x-ref="video" width="100%" height="auto" autoplay playsinline
+                                            class="rounded-lg shadow-md"></video>
+                                        <img x-show="$wire.photoTaken" :src="$wire.photoPreview" alt="Preview"
+                                            class="w-full h-auto rounded-lg shadow-md">
+                                        
+                                        <!-- Face detection status indicator -->
+                                        <div x-show="!$wire.photoTaken" 
+                                            x-text="faceDetected ? 'Wajah Terdeteksi' : 'Mendeteksi Wajah...'"
+                                            :class="faceDetected ? 'bg-green-500' : 'bg-yellow-500'"
+                                            class="absolute top-4 right-4 px-4 py-2 rounded-full text-white font-semibold shadow-lg">
+                                        </div>
+                                    </div>
                         </div>
                         <!-- Photo Controls -->
                         <div class="flex flex-col space-y-4 mb-6">
                             <div class="flex justify-between">
-                                <button x-show="!$wire.photoTaken" @click="capturePhoto"
+                                <button x-show="!$wire.photoTaken && faceDetected" @click="capturePhoto"
                                     class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 shadow-md">
                                     Ambil Foto
                                 </button>
@@ -161,6 +171,9 @@
     </div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
+    <!-- Add face-api.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/face-api.js@0.22.2/dist/face-api.min.js"></script>
+
     <script>
         // DOM
         let map;
@@ -234,22 +247,51 @@
         function cameraHandler() {
             return {
                 stream: null,
-                initializeCamera() {
+                faceDetected: false,
+                faceDetectionInterval: null,
+
+                async initializeCamera() {
+                    // Load only the necessary face detection model
+                    await faceapi.nets.tinyFaceDetector.loadFromUri('/models');
+
                     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-                        navigator.mediaDevices.getUserMedia({ video: true })
-                            .then(stream => {
-                                this.stream = stream;
-                                this.$refs.video.srcObject = stream;
-                            })
-                            .catch(error => {
-                                console.error("Unable to access the camera: ", error);
-                                alert("Unable to access the camera. Please make sure you've granted permission.");
+                        try {
+                            this.stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                            this.$refs.video.srcObject = this.stream;
+                            
+                            // Start face detection after camera is initialized
+                            this.$refs.video.addEventListener('play', () => {
+                                this.startFaceDetection();
                             });
+                        } catch (error) {
+                            console.error("Unable to access the camera: ", error);
+                            alert("Unable to access the camera. Please make sure you've granted permission.");
+                        }
                     } else {
                         alert("Sorry, your browser does not support accessing the camera.");
                     }
                 },
+
+                async startFaceDetection() {
+                    const video = this.$refs.video;
+                    
+                    this.faceDetectionInterval = setInterval(async () => {
+                        const detections = await faceapi.detectAllFaces(
+                            video,
+                            new faceapi.TinyFaceDetectorOptions()
+                        );
+
+                        // Update face detection status
+                        this.faceDetected = detections.length > 0;
+                    }, 100);
+                },
+
                 capturePhoto() {
+                    if (!this.faceDetected) {
+                        alert("Please ensure your face is visible in the camera");
+                        return;
+                    }
+
                     const video = this.$refs.video;
                     const canvas = document.createElement('canvas');
                     canvas.width = video.videoWidth;
@@ -258,11 +300,14 @@
                     const imageDataUrl = canvas.toDataURL('image/jpeg');
                     this.$wire.setPhoto(imageDataUrl);
                 },
+
                 retakePhoto() {
                     this.$wire.set('photo', null);
                     this.$wire.set('photoPreview', null);
                     this.$wire.set('photoTaken', false);
+                    this.startFaceDetection(); // Restart face detection
                 },
+
                 submitPresensi() {
                     if (!this.$wire.photoTaken) {
                         alert("Silakan ambil foto terlebih dahulu!");
@@ -270,9 +315,13 @@
                     }
                     this.$wire.submitPresensi();
                 },
+
                 stopCamera() {
                     if (this.stream) {
                         this.stream.getTracks().forEach(track => track.stop());
+                    }
+                    if (this.faceDetectionInterval) {
+                        clearInterval(this.faceDetectionInterval);
                     }
                 }
             }
