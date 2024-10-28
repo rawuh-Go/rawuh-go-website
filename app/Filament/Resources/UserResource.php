@@ -3,7 +3,6 @@
 namespace App\Filament\Resources;
 
 use App\Filament\Resources\UserResource\Pages;
-use App\Filament\Resources\UserResource\RelationManagers;
 use App\Models\User;
 use Filament\Forms;
 use Filament\Forms\Form;
@@ -11,8 +10,6 @@ use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Table;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Database\Eloquent\Builder;
-use Illuminate\Database\Eloquent\SoftDeletingScope;
 
 class UserResource extends Resource
 {
@@ -42,10 +39,14 @@ class UserResource extends Resource
                                     ->searchable(),
                                 Forms\Components\FileUpload::make('image')
                                     ->label('Photo Profile')
-                                    ->acceptedFileTypes(['image/*'])
+                                    ->image()
                                     ->disk('public')
                                     ->directory('photo-profile')
-                                    ->preserveFilenames()
+                                    ->visibility('public')
+                                    ->imageResizeMode('cover')
+                                    ->imageResizeTargetWidth('300')
+                                    ->imageResizeTargetHeight('300')
+                                    ->imageResizeUpscale(false)
                             ])
                     ]),
                 Forms\Components\Group::make()
@@ -104,7 +105,9 @@ class UserResource extends Resource
             ->columns([
                 Tables\Columns\ImageColumn::make('image')
                     ->label('Photo Profile')
-                    ->circular(),
+                    ->disk('public')
+                    ->circular()
+                    ->size(40),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Full Name')
                     ->searchable(),
