@@ -47,6 +47,7 @@ class UserResource extends Resource
                                     ->imageResizeTargetWidth('300')
                                     ->imageResizeTargetHeight('300')
                                     ->imageResizeUpscale(false)
+                                    ->placeholder('Choose a profile photo')
                             ])
                     ]),
                 Forms\Components\Group::make()
@@ -107,7 +108,8 @@ class UserResource extends Resource
                     ->label('Photo Profile')
                     ->disk('public')
                     ->circular()
-                    ->size(40),
+                    ->size(40)
+                    ->defaultImageUrl('/images/default-avatar.jpg'),
                 Tables\Columns\TextColumn::make('name')
                     ->label('Full Name')
                     ->searchable(),

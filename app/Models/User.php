@@ -39,14 +39,22 @@ class User extends Authenticatable
         ];
     }
 
-    // Hapus protected $appends jika ada
-
     public function getImageAttribute($value)
     {
         if (!$value) {
-            return null;
+            return null; // Return null akan memicu default image
         }
         return $value;
+    }
+
+    // Optional: Jika Anda ingin method helper untuk mendapatkan URL gambar
+    public function getImageUrl()
+    {
+        if (!$this->image) {
+            return url('/images/default-avatar.jpg');
+        }
+
+        return Storage::disk('public')->url($this->image);
     }
 
     public function leaves(): HasMany
