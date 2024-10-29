@@ -84,6 +84,13 @@ class Presensi extends Component
             'longitude' => 'required',
         ]);
 
+        // Validasi waktu kerja
+        $workHoursCheck = $this->isWithinWorkHours();
+        if (!$workHoursCheck['status']) {
+            session()->flash('error', $workHoursCheck['message']);
+            return;
+        }
+
         // Additional validation for clock out
         if ($this->isClockOut && empty($this->logbook)) {
             $this->showLogbookForm = true;
@@ -143,6 +150,59 @@ class Presensi extends Component
         }
     }
 
+    private function isWithinWorkHours(): array
+    {
+        $schedule = Schedule::where('user_id', Auth::user()->id)->first();
+        $now = Carbon::now();
+
+        if (!$schedule) {
+            return [
+                'status' => false,
+                'message' => 'Anda tidak memiliki jadwal kerja'
+            ];
+        }
+
+        // Untuk absen masuk
+        if (!$this->isClockOut) {
+            // Toleransi 30 menit sebelum jam masuk
+            $startTime = Carbon::parse($schedule->shift->waktu_datang)->subMinutes(30);
+            // Toleransi 30 menit setelah jam masuk
+            $endTime = Carbon::parse($schedule->shift->waktu_datang)->addMinutes(30);
+
+            if ($now->between($startTime, $endTime)) {
+                return [
+                    'status' => true,
+                    'message' => ''
+                ];
+            }
+
+            return [
+                'status' => false,
+                'message' => "Silahkan absen di jam kerja Anda: {$schedule->shift->waktu_datang}"
+            ];
+        }
+
+        // Untuk absen pulang
+        else {
+            // Toleransi 30 menit sebelum jam pulang
+            $startTime = Carbon::parse($schedule->shift->waktu_pulang)->subMinutes(30);
+            // Toleransi 2 jam setelah jam pulang
+            $endTime = Carbon::parse($schedule->shift->waktu_pulang)->addHours(2);
+
+            if ($now->between($startTime, $endTime)) {
+                return [
+                    'status' => true,
+                    'message' => ''
+                ];
+            }
+
+            return [
+                'status' => false,
+                'message' => "Silahkan absen di jam kerja Anda: {$schedule->shift->waktu_pulang}"
+            ];
+        }
+    }
+
 
     public function initiateAttendance()
     {
@@ -150,6 +210,13 @@ class Presensi extends Component
             'latitude' => 'required',
             'longitude' => 'required',
         ]);
+
+        // Validasi waktu kerja
+        $workHoursCheck = $this->isWithinWorkHours();
+        if (!$workHoursCheck['status']) {
+            session()->flash('error', $workHoursCheck['message']);
+            return;
+        }
 
         if ($this->insideRadius) {
             $this->showPhotoUploadPage = true;
