@@ -1,174 +1,135 @@
-<div class="bg-gradient-to-r from-blue-100 to-purple-100 min-h-screen py-12">
-    <div class="container mx-auto max-w-5xl px-4">
-        <div class="bg-white rounded-2xl shadow-2xl overflow-hidden">
-            <div class="p-8">
-                <h1 class="text-4xl font-bold text-gray-800 mb-8 text-center">Informasi Presensi</h1>
-
-                @if (!$showPhotoUploadPage)
-                    <!-- Employee Information -->
-                    <div class="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-6 mb-8 shadow-md">
-                        <h2 class="text-2xl font-semibold text-indigo-800 mb-4">Informasi Pegawai</h2>
-                        <div class="grid md:grid-cols-2 gap-6">
-                            <div class="space-y-2">
-                                <p class="text-gray-700"><span class="font-medium text-indigo-600">Nama Pegawai:</span>
-                                    {{Auth::user()->name}}</p>
-                                <p class="text-gray-700"><span class="font-medium text-indigo-600">Kantor:</span>
-                                    {{$schedule->office->nama}}</p>
-                            </div>
-                            <div class="space-y-2">
-                                <p class="text-gray-700"><span class="font-medium text-indigo-600">Shift:</span>
-                                    {{$schedule->shift->nama}}
-                                    ({{$schedule->shift->waktu_datang}} - {{$schedule->shift->waktu_pulang}} WIB)</p>
-                                <p class="text-gray-700">
-                                    <span class="font-medium text-indigo-600">Status:</span>
-                                    @if ($schedule->is_wfa)
-                                        <span class="text-blue-600 font-semibold bg-blue-100 px-2 py-1 rounded-full">WFA</span>
-                                    @else
-                                        <span
-                                            class="text-green-600 font-semibold bg-green-100 px-2 py-1 rounded-full">WFO</span>
-                                    @endif
-                                </p>
-                            </div>
-                        </div>
+<div class="min-h-screen bg-[#212A2E] py-8">
+    <div class="container mx-auto px-4 max-w-3xl">
+        <!-- Card Utama -->
+        <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
+            <!-- Header Section dengan border putih sebagai pembatas -->
+            <div class="bg-[#212A2E] p-6 border-2 border-white rounded-t-2xl"> <!-- Modifikasi di sini -->
+                <div class="text-center mb-4">
+                    <h1 class="text-2xl font-bold text-yellow-400">{{ $schedule->office->nama }}</h1>
+                </div>
+                
+                <!-- Profile Section -->
+                <div class="flex items-center justify-center space-x-4 mb-6">
+                    <div class="w-16 h-16 rounded-full overflow-hidden">
+                        <img src="{{ Auth::user()->getImageUrl() }}" alt="Profile" class="w-full h-full object-cover">
                     </div>
-
-                    <!-- Attendance Times -->
-                    <div class="grid md:grid-cols-2 gap-6 mb-8">
-                        <div
-                            class="bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl p-6 shadow-md transition duration-300 hover:shadow-lg">
-                            <h3 class="text-xl font-semibold text-emerald-800 mb-2">Waktu Masuk</h3>
-                            <p class="text-3xl font-bold text-emerald-600">{{$attendance ? $attendance->waktu_datang : '-'}}
-                            </p>
-                        </div>
-                        <div
-                            class="bg-gradient-to-r from-red-50 to-rose-50 rounded-xl p-6 shadow-md transition duration-300 hover:shadow-lg">
-                            <h3 class="text-xl font-semibold text-rose-800 mb-2">Waktu Pulang</h3>
-                            <p class="text-3xl font-bold text-rose-600">
-                                {{$attendance && $attendance->waktu_pulang ? $attendance->waktu_pulang : '-'}}
-                            </p>
-                        </div>
+                    <div class="text-white">
+                        <h2 class="text-lg font-semibold">{{ Auth::user()->name }}</h2>
+                        <p class="text-yellow-400">{{ Auth::user()->job_position }}</p>
                     </div>
+                </div>
 
-                    <!-- Map and Attendance Form -->
-                    <div class="bg-gradient-to-r from-gray-50 to-slate-50 rounded-xl p-6 shadow-md">
-                        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Presensi</h2>
-                        <div id="map" class="w-full h-96 rounded-lg border-2 border-gray-300 mb-6 shadow-inner" wire:ignore>
+                <!-- Date & Time Section -->
+                <div class="text-center text-white">
+                    <p class="text-lg">{{ now()->format('l, d F Y') }}</p>
+                </div>
+            </div>
+
+            @if (!$showPhotoUploadPage)
+                <!-- Check In/Out Times -->
+                <div class="grid grid-cols-2 gap-4 p-6 bg-white">
+                    <div class="text-center p-4 rounded-xl border-2 border-[#212A2E]">
+                        <p class="text-sm text-gray-600 mb-1">CHECK IN</p>
+                        <p class="text-xl font-bold text-[#212A2E]">
+                            {{$attendance ? $attendance->waktu_datang : '-'}}
+                        </p>
+                    </div>
+                    <div class="text-center p-4 rounded-xl border-2 border-[#212A2E]">
+                        <p class="text-sm text-gray-600 mb-1">CHECK OUT</p>
+                        <p class="text-xl font-bold text-[#212A2E]">
+                            {{$attendance && $attendance->waktu_pulang ? $attendance->waktu_pulang : '-'}}
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Map Section -->
+                <div class="p-6 bg-gray-50">
+                    <div id="map" class="w-full h-[300px] rounded-xl border-2 border-gray-200 mb-4" wire:ignore></div>
+
+                    <!-- Alert Messages -->
+                    @if (session()->has('message'))
+                        <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4">
+                            {{ session('message') }}
                         </div>
+                    @endif
 
-                        <!-- Messages -->
-                        @if (session()->has('message'))
-                            <div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-4"
-                                role="alert">
-                                <span class="block sm:inline">{{ session('message') }}</span>
-                            </div>
-                        @endif
+                    @if (session()->has('error'))
+                        <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4">
+                            {{ session('error') }}
+                        </div>
+                    @endif
 
-                        @if (session()->has('error'))
-                            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative mb-4"
-                                role="alert">
-                                <span class="block sm:inline">{{ session('error') }}</span>
-                            </div>
-                        @endif
-
-                        <form class="flex flex-col sm:flex-row gap-4" wire:submit.prevent="initiateAttendance">
-                            <button type="button" onclick="tagLocation()"
-                                class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 shadow-md">
-                                Ambil Lokasi
+                    <!-- Action Buttons -->
+                    <div class="flex flex-col gap-3">
+                        <button onclick="tagLocation()" 
+                            class="w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-[#212A2E] font-bold rounded-xl transition duration-300">
+                            Ambil Lokasi
+                        </button>
+                        @if ($insideRadius)
+                            <button wire:click="initiateAttendance"
+                                class="w-full py-3 bg-[#212A2E] hover:bg-gray-800 text-white font-bold rounded-xl transition duration-300">
+                                Lanjut ke Foto
                             </button>
-                            @if ($insideRadius)
-                                <button
-                                    class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 shadow-md"
-                                    type="submit">
-                                    Lanjut ke Foto
-                                </button>
-                            @endif
-                        </form>
+                        @endif
                     </div>
-                @else
-                    <!-- Photo Upload Section -->
+                </div>
+            @else
+                <!-- Photo Upload Section - Menggunakan header yang sama -->
+                <div class="p-6">
                     <div x-data="cameraHandler()" x-init="initializeCamera">
-                        <h2 class="text-2xl font-semibold text-gray-800 mb-4">Ambil Foto Presensi</h2>
-                        <div class="mb-4 relative">
-                        <!-- Video feed container -->
-                        <div class="relative">
-                                        <video x-show="!$wire.photoTaken" x-ref="video" width="100%" height="auto" autoplay playsinline
-                                            class="rounded-lg shadow-md"></video>
-                                        <img x-show="$wire.photoTaken" :src="$wire.photoPreview" alt="Preview"
-                                            class="w-full h-auto rounded-lg shadow-md">
-                                        
-                                        <!-- Face detection status indicator -->
-                                        <div x-show="!$wire.photoTaken" 
-                                            x-text="faceDetected ? 'Wajah Terdeteksi' : 'Mendeteksi Wajah...'"
-                                            :class="faceDetected ? 'bg-green-500' : 'bg-yellow-500'"
-                                            class="absolute top-4 right-4 px-4 py-2 rounded-full text-white font-semibold shadow-lg">
-                                        </div>
-                                    </div>
-                        </div>
-                        <!-- Photo Controls -->
-                        <div class="flex flex-col space-y-4 mb-6">
-                            <div class="flex justify-between">
-                                <button x-show="!$wire.photoTaken && faceDetected" @click="capturePhoto"
-                                    class="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-opacity-50 shadow-md">
-                                    Ambil Foto
-                                </button>
-                                <button x-show="$wire.photoTaken" @click="retakePhoto"
-                                    class="px-6 py-3 bg-yellow-500 hover:bg-yellow-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-yellow-400 focus:ring-opacity-50 shadow-md">
-                                    Ambil Ulang
-                                </button>
+                        <div class="relative mb-4">
+                            <video x-show="!$wire.photoTaken" x-ref="video" class="w-full rounded-xl" autoplay playsinline></video>
+                            <img x-show="$wire.photoTaken" :src="$wire.photoPreview" class="w-full rounded-xl">
+                            
+                            <!-- Face Detection Status -->
+                            <div x-show="!$wire.photoTaken" 
+                                x-text="faceDetected ? 'Wajah Terdeteksi' : 'Mendeteksi Wajah...'"
+                                :class="faceDetected ? 'bg-green-500' : 'bg-yellow-400'"
+                                class="absolute top-4 right-4 px-4 py-2 rounded-full text-white font-bold">
                             </div>
+                        </div>
 
-                            <!-- Enhanced Logbook Form -->
+                        <!-- Photo Controls -->
+                        <div class="space-y-4">
+                            <button x-show="!$wire.photoTaken && faceDetected" @click="capturePhoto"
+                                class="w-full py-3 bg-yellow-400 hover:bg-yellow-500 text-[#212A2E] font-bold rounded-xl">
+                                Ambil Foto
+                            </button>
+                            
+                            <button x-show="$wire.photoTaken" @click="retakePhoto"
+                                class="w-full py-3 bg-gray-400 hover:bg-gray-500 text-white font-bold rounded-xl">
+                                Ambil Ulang
+                            </button>
+
+                            <!-- Logbook Section -->
                             @if ($isClockOut && $photoTaken)
-                                <div
-                                    class="bg-white rounded-xl shadow-lg p-6 border border-gray-200 transition-all duration-300 ease-in-out transform hover:shadow-xl">
-                                    <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
-                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2 text-blue-500" fill="none"
-                                            viewBox="0 0 24 24" stroke="currentColor">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                        </svg>
-                                        Logbook Harian
-                                    </h3>
-
-                                    <div class="space-y-4">
-                                        <div class="relative">
-                                            <textarea wire:model="logbook"
-                                                class="w-full h-40 p-4 border rounded-lg focus:ring-2 focus:ring-blue-400 focus:border-blue-400 transition-all duration-200 ease-in-out resize-none"
-                                                placeholder="Deskripsikan pekerjaan yang telah Anda lakukan hari ini..."></textarea>
-                                            @error('logbook')
-                                                <p class="mt-2 text-sm text-red-600">{{ $message }}</p>
-                                            @enderror
-                                        </div>
-
-                                        <div class="flex justify-end space-x-4">
-                                            <button @click="submitPresensi"
-                                                class="px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 shadow-md flex items-center">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M5 13l4 4L19 7" />
-                                                </svg>
-                                                Submit Presensi
-                                            </button>
-                                        </div>
-                                    </div>
+                                <div class="mt-4">
+                                    <textarea wire:model="logbook"
+                                        class="w-full p-3 border rounded-xl focus:ring-2-yellow-400"
+                                        placeholder="Deskripsikan pekerjaan hari ini..."></textarea>
                                 </div>
-                            @elseif (!$isClockOut && $photoTaken)
+                            @endif
+
+                            <!-- Submit Button -->
+                            @if ($photoTaken)
                                 <button @click="submitPresensi"
-                                    class="w-full px-6 py-3 bg-green-500 hover:bg-green-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-green-400 focus:ring-opacity-50 shadow-md">
+                                    class="w-full py-3 bg-[#212A2E] hover:bg-gray-800 text-white font-bold rounded-xl">
                                     Submit Presensi
                                 </button>
                             @endif
+
+                            <!-- Back Button -->
                             <button wire:click="backToMap"
-                                class="w-full px-6 py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition duration-300 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-opacity-50 shadow-md">
-                                Kembali ke Peta
+                                class="w-full py-3 bg-gray-200 hover:bg-gray-300 text-[#212A2E] font-bold rounded-xl">
+                                Kembali
                             </button>
                         </div>
-                @endif
+                    </div>
                 </div>
-            </div>
+            @endif
         </div>
     </div>
+</div>
 
     <script src="https://unpkg.com/leaflet/dist/leaflet.js"></script>
     <!-- Add face-api.js CDN -->
