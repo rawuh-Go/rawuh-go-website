@@ -47,7 +47,7 @@ class User extends Authenticatable
         return $value;
     }
 
-    // Optional: Jika Anda ingin method helper untuk mendapatkan URL gambar
+    // method helper untuk mendapatkan URL gambar
     public function getImageUrl()
     {
         if (!$this->image) {

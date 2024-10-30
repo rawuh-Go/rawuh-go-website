@@ -43,7 +43,7 @@ class Presensi extends Component
         $attendance = Attendance::where('user_id', Auth::user()->id)
             ->whereDate('created_at', date('Y-m-d'))->first();
 
-        // Set isClockOut based on attendance status
+        // Atur isClockOut berdasarkan status kehadiran
         if ($attendance && !$attendance->waktu_pulang) {
             $this->isClockOut = true;
         }
@@ -64,7 +64,7 @@ class Presensi extends Component
         $this->photoPreview = $photoData;
         $this->photoTaken = true;
 
-        // Automatically show logbook form after taking photo during clock out
+        // menampilkan form logbook jika isClockOut
         if ($this->isClockOut) {
             $this->showLogbookForm = true;
         }
@@ -77,7 +77,7 @@ class Presensi extends Component
 
     public function submitPresensi()
     {
-        // Validate basic requirements
+        // Validasi
         $this->validate([
             'photo' => 'required',
             'latitude' => 'required',
@@ -91,7 +91,7 @@ class Presensi extends Component
             return;
         }
 
-        // Additional validation for clock out
+        // Additional validation untuk jam pulang
         if ($this->isClockOut && empty($this->logbook)) {
             $this->showLogbookForm = true;
             session()->flash('error', 'Mohon isi logbook terlebih dahulu.');
@@ -115,7 +115,7 @@ class Presensi extends Component
             Storage::disk('public')->put($photoPath, $image);
 
             if (!$attendance) {
-                // Clock in
+                // Check in
                 Attendance::create([
                     'user_id' => $user->id,
                     'schedule_latitude' => $schedule->office->latitude,
@@ -129,7 +129,7 @@ class Presensi extends Component
                 ]);
                 session()->flash('message', 'Presensi masuk berhasil.');
             } else {
-                // Clock out
+                // Check out
                 if ($attendance->waktu_pulang) {
                     session()->flash('error', 'Anda sudah melakukan presensi pulang hari ini.');
                     return;

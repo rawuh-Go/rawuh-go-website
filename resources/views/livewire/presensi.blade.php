@@ -2,10 +2,10 @@
     <div class="container mx-auto px-4 max-w-3xl">
         <!-- Card Utama -->
         <div class="bg-white rounded-2xl shadow-xl overflow-hidden">
-            <!-- Header Section dengan border putih sebagai pembatas -->
-            <div class="bg-[#212A2E] p-6 border-2 border-white rounded-t-2xl"> <!-- Modifikasi di sini -->
+            <!-- Header Section -->
+            <div class="bg-[#212A2E] p-6 border-2 border-white rounded-t-2xl">
                 <div class="text-center mb-4">
-                    <h1 class="text-2xl font-bold text-yellow-400">{{ $schedule->office->nama }}</h1>
+                    <h1 class="text-2xl font-bold text-white">{{ $schedule->office->nama }}</h1>
                 </div>
                 
                 <!-- Profile Section -->
@@ -74,7 +74,7 @@
                     </div>
                 </div>
             @else
-                <!-- Photo Upload Section - Menggunakan header yang sama -->
+                <!-- Photo Upload Section -->
                 <div class="p-6">
                     <div x-data="cameraHandler()" x-init="initializeCamera">
                         <div class="relative mb-4">

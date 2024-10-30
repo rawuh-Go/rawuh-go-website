@@ -26,7 +26,7 @@ class AssignmentResource extends Resource
 
     public static function form(Form $form): Form
     {
-        $isAdmin = auth()->user()->hasRole(['super_admin', 'hrd']);
+        $isAdmin = auth()->user()->hasRole(['super_admin', 'HRD']);
 
         return $form
             ->schema([
@@ -101,11 +101,12 @@ class AssignmentResource extends Resource
     {
         return $table
             ->modifyQueryUsing(function (Builder $query) {
-                if (!auth()->user()->hasRole(['super_admin', 'hrd'])) {
+                if (!auth()->user()->hasRole(['super_admin', 'HRD'])) {
                     $query->whereHas('users', function ($q) {
                         $q->where('user_id', auth()->id());
                     });
                 }
+                $query->latest();
             })
             ->columns([
                 Tables\Columns\TextColumn::make('judul')
@@ -171,7 +172,7 @@ class AssignmentResource extends Resource
                     })
                     ->visible(
                         fn(Assignment $record) =>
-                        !auth()->user()->hasRole(['super_admin', 'hrd']) &&
+                        !auth()->user()->hasRole(['super_admin', 'HRD']) &&
                         in_array($record->status, [
                             Assignment::STATUS_PENDING,
                             Assignment::STATUS_IN_PROGRESS,
@@ -179,7 +180,7 @@ class AssignmentResource extends Resource
                         ])
                     ),
 
-                // Action approve untuk admin/hrd
+                // Action approve untuk admin/HRD
                 Tables\Actions\Action::make('approve')
                     ->form([
                         Forms\Components\Textarea::make('feedback')
@@ -195,11 +196,11 @@ class AssignmentResource extends Resource
                     ->requiresConfirmation()
                     ->visible(
                         fn(Assignment $record) =>
-                        auth()->user()->hasRole(['super_admin', 'hrd']) &&
+                        auth()->user()->hasRole(['super_admin', 'HRD']) &&
                         $record->status === Assignment::STATUS_IN_PROGRESS
                     ),
 
-                // Action reject untuk admin/hrd
+                // Action reject untuk admin/HRD
                 Tables\Actions\Action::make('reject')
                     ->color('danger')
                     ->form([
@@ -218,7 +219,7 @@ class AssignmentResource extends Resource
                     ->requiresConfirmation()
                     ->visible(
                         fn(Assignment $record) =>
-                        auth()->user()->hasRole(['super_admin', 'hrd']) &&
+                        auth()->user()->hasRole(['super_admin', 'HRD']) &&
                         $record->status === Assignment::STATUS_IN_PROGRESS
                     ),
             ]);
@@ -241,11 +242,11 @@ class AssignmentResource extends Resource
 
     public static function canCreate(): bool
     {
-        return auth()->user()->hasRole(['super_admin', 'hrd']);
+        return auth()->user()->hasRole(['super_admin', 'HRD']);
     }
 
     public static function canEdit(Model $record): bool
     {
-        return auth()->user()->hasRole(['super_admin', 'hrd']);
+        return auth()->user()->hasRole(['super_admin', 'HRD']);
     }
 }
