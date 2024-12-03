@@ -28,6 +28,7 @@ class Attendance extends Model
         'foto_absen_datang',
         'foto_absen_pulang',
         'logbook',
+        'status',
     ];
 
     protected $casts = [

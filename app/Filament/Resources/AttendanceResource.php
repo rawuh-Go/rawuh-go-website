@@ -111,6 +111,24 @@ class AttendanceResource extends Resource
                     ->dateTime()
                     ->sortable()
                     ->toggleable(isToggledHiddenByDefault: true),
+                // Mengubah kolom status untuk menggunakan logika yang sama dengan RecapPresensiResource
+                Tables\Columns\TextColumn::make('attendance_status')
+                    ->label('Status Kehadiran')
+                    ->badge()
+                    ->getStateUsing(function ($record) {
+                        if (!$record->waktu_datang) {
+                            return 'Alfa';
+                        }
+                        if (!$record->waktu_pulang) {
+                            return 'Tidak Checkout';
+                        }
+                        return 'Hadir';
+                    })
+                    ->color(fn(string $state): string => match ($state) {
+                        'Hadir' => 'success',
+                        'Tidak Checkout' => 'warning',
+                        'Alfa' => 'danger',
+                    }),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([

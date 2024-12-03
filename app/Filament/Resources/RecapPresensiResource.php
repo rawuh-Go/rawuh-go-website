@@ -16,6 +16,8 @@ use Filament\Tables\Filters\Filter;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Auth;
 use pxlrbt\FilamentExcel\Actions\Tables\ExportBulkAction;
+use pxlrbt\FilamentExcel\Exports\ExcelExport;
+use pxlrbt\FilamentExcel\Columns\Column;
 use Filament\Tables\Actions\Action;
 use Barryvdh\DomPDF\Facade\Pdf;
 
@@ -55,38 +57,37 @@ class RecapPresensiResource extends Resource
                     ->label('Nama')
                     ->searchable()
                     ->sortable(),
-                Tables\Columns\TextColumn::make('is_late')
-                    ->label('Status')
-                    ->badge()
-                    ->getStateUsing(function ($record) {
-                        return $record->isLate() ? 'Terlambat' : 'Tepat Waktu';
-                    })
-                    ->color(fn(string $state): string => match ($state) {
-                        'Tepat Waktu' => 'success',
-                        'Terlambat' => 'danger',
-                    })
-                    ->description(fn(Attendance $record): string => 'Durasi' . ' ' . $record->calculateWorkDuration()),
+                Tables\Columns\TextColumn::make('work_duration')
+                    ->label('Durasi Kerja')
+                    ->getStateUsing(fn(Attendance $record): string => $record->calculateWorkDuration()),
                 Tables\Columns\TextColumn::make('user.roles.name')
-                    ->label('Job Roles')
+                    ->label('Job Role')
                     ->sortable(),
                 Tables\Columns\TextColumn::make('waktu_datang')
-                    ->label('Datang'),
+                    ->label('Waktu Datang'),
                 Tables\Columns\TextColumn::make('waktu_pulang')
-                    ->label('Pulang'),
-                Tables\Columns\TextColumn::make('logbook')
-                    ->label('Logbook Harian')
-                    ->limit(50)
-                    ->tooltip(function (Tables\Columns\TextColumn $column): ?string {
-                        $state = $column->getState();
-                        if (strlen($state) <= 50) {
-                            return null;
+                    ->label('Waktu Pulang'),
+                Tables\Columns\TextColumn::make('attendance_status')
+                    ->label('Status Kehadiran')
+                    ->badge()
+                    ->getStateUsing(function ($record) {
+                        if (!$record->waktu_datang) {
+                            return 'Alfa';
                         }
-                        return $state;
+                        if (!$record->waktu_pulang) {
+                            return 'Tidak Checkout';
+                        }
+                        return 'Hadir';
+                    })
+                    ->color(fn(string $state): string => match ($state) {
+                        'Hadir' => 'success',
+                        'Tidak Checkout' => 'warning',
+                        'Alfa' => 'danger',
                     }),
             ])
             ->defaultSort('created_at', 'desc')
             ->filters([
-                SelectFilter::make('user')
+                SelectFilter::make('user_id')
                     ->label('Karyawan')
                     ->options(User::pluck('name', 'id'))
                     ->searchable(),
@@ -131,12 +132,36 @@ class RecapPresensiResource extends Resource
                             );
                     })
             ])
-            ->actions([
-                // Single record actions if needed
-            ])
             ->bulkActions([
                 ExportBulkAction::make()
-                    ->label('Export Excel'),
+                    ->label('Export Excel')
+                    ->exports([
+                        ExcelExport::make()
+                            ->withColumns([
+                                Column::make('Tanggal')
+                                    ->getStateUsing(fn($record) => $record->created_at->format('Y-m-d')),
+                                Column::make('Nama')
+                                    ->getStateUsing(fn($record) => $record->user->name),
+                                Column::make('Durasi Kerja')
+                                    ->getStateUsing(fn($record) => $record->calculateWorkDuration()),
+                                Column::make('Job Role')
+                                    ->getStateUsing(fn($record) => $record->user->roles->first() ? $record->user->roles->first()->name : '-'),
+                                Column::make('Waktu Datang')
+                                    ->getStateUsing(fn($record) => $record->waktu_datang),
+                                Column::make('Waktu Pulang')
+                                    ->getStateUsing(fn($record) => $record->waktu_pulang),
+                                Column::make('Status Kehadiran')
+                                    ->getStateUsing(function ($record) {
+                                        if (!$record->waktu_datang) {
+                                            return 'Alfa';
+                                        }
+                                        if (!$record->waktu_pulang) {
+                                            return 'Tidak Checkout';
+                                        }
+                                        return 'Hadir';
+                                    }),
+                            ]),
+                    ]),
                 Tables\Actions\BulkAction::make('export_pdf')
                     ->label('Export PDF')
                     ->action(function ($records) {

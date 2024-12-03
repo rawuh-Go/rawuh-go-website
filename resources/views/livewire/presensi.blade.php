@@ -168,30 +168,65 @@
         // Capture user location
         function tagLocation() {
             if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(function (position) {
+                const options = {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                };
+
+                // Get dynamic accuracy threshold based on office radius
+                const accuracyThreshold = Math.min(radius * 0.5, 150); // 50% of radius or max 150m
+
+                navigator.geolocation.getCurrentPosition(function(position) {
                     lat = position.coords.latitude;
                     lng = position.coords.longitude;
+                    const accuracy = position.coords.accuracy;
+
+                    if (accuracy > accuracyThreshold) {
+                        alert(`Lokasi kurang akurat (${Math.round(accuracy)}m). Pastikan GPS aktif dan tunggu beberapa detik.`);
+                        return;
+                    }
 
                     if (marker) {
                         map.removeLayer(marker);
                     }
 
-                    marker = L.marker([lat, lng]).addTo(map)
-                        .bindPopup('Your Location')
-                        .openPopup();
-                    map.setView([lat, lng], 15);
+                    // Add accuracy circle with dynamic styling
+                    const accuracyCircle = L.circle([lat, lng], {
+                        radius: accuracy,
+                        color: accuracy <= accuracyThreshold/2 ? 'green' : 'orange',
+                        fillColor: accuracy <= accuracyThreshold/2 ? '#3f6' : '#f93',
+                        fillOpacity: 0.15
+                    }).addTo(map);
 
-                    // Check if within radius
+                    marker = L.marker([lat, lng]).addTo(map)
+                        .bindPopup(`Lokasi Anda (Akurasi: ${Math.round(accuracy)}m)`)
+                        .openPopup();
+                    
+                    // Dynamic zoom based on office radius
+                    const zoomLevel = radius > 1000 ? 15 : radius > 500 ? 16 : 17;
+                    map.setView([lat, lng], zoomLevel);
+
                     if (radiusDistance(lat, lng, office, radius)) {
                         component.set('insideRadius', true);
                         component.set('latitude', lat);
                         component.set('longitude', lng);
                     }
-                })
+                }, function(error) {
+                    const errorMessages = {
+                        1: "Izin lokasi ditolak. Mohon aktifkan akses lokasi.",
+                        2: "Informasi lokasi tidak tersedia.",
+                        3: "Waktu permintaan lokasi habis."
+                    };
+                    alert(errorMessages[error.code] || "Terjadi kesalahan saat mengambil lokasi");
+                }, options);
             } else {
                 alert('Tidak bisa mendapatkan lokasi');
             }
         }
+
+
+
 
         // Calculate user radius
         function radiusDistance(lat, lng, center, radius) {
