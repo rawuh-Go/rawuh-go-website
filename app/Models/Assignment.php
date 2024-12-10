@@ -46,7 +46,8 @@ class Assignment extends Model
     public function users()
     {
         return $this->belongsToMany(User::class)
-            ->withPivot('laporan', 'file_laporan')
+            ->withPivot('laporan', 'file_laporan', 'link_laporan')
             ->withTimestamps();
     }
+
 }

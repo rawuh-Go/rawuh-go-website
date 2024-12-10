@@ -128,6 +128,30 @@ class AssignmentResource extends Resource
                         'done' => 'success',
                         'rejected' => 'danger',
                     }),
+                Tables\Columns\TextColumn::make('submission')
+                    ->label('View Submission')
+                    ->formatStateUsing(function ($record) {
+                        $submission = $record->users->first()?->pivot;
+                        if ($submission?->link_laporan) {
+                            return '🔗 View Link';
+                        } elseif ($submission?->file_laporan) {
+                            return '📎 View File';
+                        }
+                        return '-';
+                    })
+                    ->url(function ($record) {
+                        $submission = $record->users->first()?->pivot;
+                        if ($submission?->link_laporan) {
+                            return $submission->link_laporan;
+                        } elseif ($submission?->file_laporan) {
+                            return Storage::url($submission->file_laporan);
+                        }
+                        return null;
+                    })
+                    ->openUrlInNewTab()
+                    ->visible(fn() => auth()->user()->hasRole(['super_admin', 'HRD']))
+                    ->icon('heroicon-m-eye')
+                    ->iconPosition('before')
             ])
             ->actions([
                 Tables\Actions\ViewAction::make(),
@@ -145,16 +169,20 @@ class AssignmentResource extends Resource
                         Forms\Components\FileUpload::make('file_laporan')
                             ->directory(function (Assignment $record) {
                                 $folderName = Str::slug($record->judul);
-                                return "assignment/{$folderName}";
+                                return "public/assignment/{$folderName}";
                             })
                             ->preserveFilenames()
                             ->label('File Pendukung (Opsional)'),
+                        Forms\Components\TextInput::make('link_laporan')
+                            ->url()
+                            ->label('Link Laporan (Opsional)')
                     ])
                     ->action(function (Assignment $record, array $data) {
-                        // Jika ada file laporan lama, hapus filenya
-                        $oldFile = auth()->user()->assignments()->find($record->id)?->pivot?->file_laporan;
-                        if ($oldFile && Storage::exists($oldFile)) {
-                            Storage::delete($oldFile);
+                        // Clear previous submission data
+                        $oldSubmission = auth()->user()->assignments()->find($record->id)?->pivot;
+
+                        if ($oldSubmission?->file_laporan && Storage::exists($oldSubmission->file_laporan)) {
+                            Storage::delete($oldSubmission->file_laporan);
                         }
 
                         auth()->user()->assignments()->updateExistingPivot(
@@ -162,9 +190,11 @@ class AssignmentResource extends Resource
                             [
                                 'laporan' => $data['laporan'],
                                 'file_laporan' => $data['file_laporan'] ?? null,
+                                'link_laporan' => $data['link_laporan'] ?? null,
                                 'submitted_at' => now(),
                             ]
                         );
+
                         $record->update([
                             'status' => Assignment::STATUS_IN_PROGRESS,
                             'feedback' => null

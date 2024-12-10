@@ -106,6 +106,11 @@ class LeaveResource extends Resource
                 Tables\Columns\TextColumn::make('type_leave')
                     ->label('Type Leave')
                     ->sortable(),
+                Tables\Columns\TextColumn::make('attachment')
+                    ->label('Attachment')
+                    ->formatStateUsing(fn($state) => $state ? 'View Attachment' : '-')
+                    ->url(fn($record) => $record->attachment ? Storage::url($record->attachment) : null)
+                    ->openUrlInNewTab(),
                 Tables\Columns\TextColumn::make('status')
                     ->label('Status')
                     ->badge()
